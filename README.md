@@ -59,7 +59,7 @@ The pipeline is orchestrated by `main_local_translate.py` and follows a hybrid s
 
 1.  **Clone the Repository:**
     ```bash
-    git clone [https://github.com/your-username/your-project-name.git](https://github.com/your-username/your-project-name.git)
+    git clone [https://github.com/ekocak02/rag-arxiv.git](https://github.com/ekocak02/rag-arxiv.git)
     cd your-project-name
     ```
 
