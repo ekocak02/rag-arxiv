@@ -1,101 +1,127 @@
-# Local RAG Pipeline for Daily arXiv Summaries
-
-[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/release/python-3100/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Local RAG Pipeline for Daily arXiv LinkedIn Posts
 
 This project is an end-to-end automated RAG (Retrieval-Augmented Generation) pipeline. Its primary purpose is to gain foundational knowledge in RAG systems by building a practical automation.
 
-The system automatically fetches the latest AI and Data Science papers from arXiv, processes them into a local vector database, uses a local LLM to generate daily trend-analysis reports, and finally translates these reports into Turkish. The entire process runs 100% locally using Ollama, requiring no API keys.
+The system automatically fetches the latest AI and Data Science papers from arXiv, processes them into a local vector database, uses a local LLM to generate a focused, daily LinkedIn-ready post summarizing the day's key innovations, and finally translates this post into Turkish. The entire process runs 100% locally using Ollama, requiring no API keys.
 
-## 🚀 Features
+🚀 Features
 
-* **End-to-End Automation:** A single script (`main_local_translate.py`) runs the entire workflow.
-* **100% Local:** Uses [Ollama](https://ollama.com/) for both embeddings and LLM generation. No external API keys or costs.
-* **Vector Storage:** Employs [LanceDB](https://lancedb.github.io/lancedb/) as a serverless, local-first vector store.
-* **Daily Trend Analysis:** Instead of just listing papers, it uses a RAG prompt to identify and summarize key *themes* for each day.
-* **Metadata Filtering:** The RAG query filters the vector store by publication date (`metadata.published_date LIKE '...%'`) to generate true daily reports.
-* **Idempotent:** A local SQLite database (`processed_papers.db`) tracks processed papers to prevent re-indexing.
-* **Local Translation:** Includes a module to translate the final English report into Turkish using a local Helsinki-NLP model.
+End-to-End Automation: A single script (main_linkedin_report.py) runs the entire workflow.
 
-## 🛠️ Tech Stack
+100% Local: Uses Ollama for both embeddings and LLM generation. No external API keys or costs.
 
-* **Core:** Python 3.10+
-* **LLM & Embeddings:** [LlamaIndex](https://www.llamaindex.ai/), [Ollama](https://ollama.com/) (e.g., `gemma3:4b`, `embeddinggemma:300m`)
-* **Vector Database:** [LanceDB](https://lancedb.github.io/lancedb/)
-* **Translation:** [Hugging Face Transformers](https://huggingface.co/transformers), [NLTK](https://www.nltk.org/)
-* **Data Fetching:** [arxiv](https://pypi.org/project/arxiv/)
-* **Utilities:** `tqdm` (for progress bars)
+Vector Storage: Employs LanceDB as a serverless, local-first vector store.
 
-## 🏗️ Architecture & Workflow
+Advanced Map-Reduce RAG: Instead of a simple query, it uses a multi-step Map-Reduce strategy to synthesize insights from many papers into a single, cohesive post.
 
-The pipeline is orchestrated by `main_local_translate.py` and follows a hybrid strategy: it fetches 7 days of data at once but generates reports in a daily loop.
+Metadata Filtering: The RAG query filters the vector store by publication date (metadata.published_date LIKE '...%') to generate true daily reports.
 
-1.  **Fetch (Data Ingestor):**
-    * Queries the arXiv API for new papers from the last 7 days (`data_ingestor.py`).
+Idempotent: A local SQLite database (processed_papers.db) tracks processed papers to prevent re-indexing.
 
-2.  **Deduplicate (DB Manager):**
-    * Checks each `entry_id` against the SQLite DB (`processed_papers.db`).
-    * Already processed papers are skipped (`db_manager.py`).
+Local Translation: Includes a module to translate the final English post into Turkish using a local Helsinki-NLP model.
 
-3.  **Index (Vector Indexer):**
-    * For new papers, the abstract is embedded using Ollama (`embeddinggemma:300m`).
-    * The vector and its metadata (title, authors, `published_date`, etc.) are stored in LanceDB (`vector_indexer.py`).
-    * Processed paper IDs are saved to the SQLite DB.
+🛠️ Tech Stack
 
-4.  **Generate (RAG Reporter):**
-    * The main script loops through each of the past 7 days.
-    * For each day, it runs a RAG query against the LLM (`gemma3:4b`).
-    * The query is **filtered** using the `date_filter_str` parameter, forcing the RAG engine to only use documents from that specific day (`rag_reporter.py`).
-    * The LLM generates a thematic summary (e.g., "Theme 1: ...", "Theme 2: ...") for that day.
+Core: Python 3.11+
 
-5.  **Translate (Local Translator):**
-    * All daily English reports are combined into a single large markdown file.
-    * This final report is translated into Turkish using the `Helsinki-NLP` model, carefully preserving markdown formatting (`local_translator.py`).
+LLM & Embeddings: LlamaIndex, Ollama (e.g., gemma3:4b, embeddinggemma:300m)
 
-6.  **Save:**
-    * The final English (`EN_Weekly_Report_...md`) and Turkish (`TR_Haftalik_Rapor_...md`) reports are saved to the `haftalik_raporlar/` directory.
+Vector Database: LanceDB
 
-## 🔧 Setup & Installation
+Translation: Hugging Face Transformers, NLTK
 
-1.  **Clone the Repository:**
-    ```bash
-    git clone [https://github.com/ekocak02/rag-arxiv.git](https://github.com/ekocak02/rag-arxiv.git)
-    cd your-project-name
-    ```
+Data Fetching: arxiv
 
-2.  **Install Ollama:**
-    * Download and install [Ollama](https://ollama.com/) for your operating system.
+Utilities: tqdm (for progress bars)
 
-3.  **Pull Ollama Models:**
-    * You must pull the embedding and LLM models specified in the scripts.
-    ```bash
-    ollama pull embeddinggemma:300m
-    ollama pull gemma3:4b
-    ```
-    *(Note: If you use different models, update the `EMBED_MODEL_NAME` and `LLM_MODEL_NAME` constants in `vector_indexer.py` and `rag_reporter.py`.)*
+🏗️ Architecture & Workflow
 
-4.  **Create a Virtual Environment & Install Dependencies:**
-    ```bash
-    python -m venv .venv
-    source .venv/bin/activate  # (On Windows: .venv\Scripts\activate)
-    pip install -r requirements.txt
-    ```
+The pipeline is orchestrated by main_linkedin_report.py and follows a daily fetch, daily post strategy.
 
-5.  **Download NLTK Data:**
-    * The `local_translator.py` script requires the `punkt` tokenizer. It will attempt to download it automatically on the first run.
+Fetch (Data Ingestor):
 
-## Usage
+Queries the arXiv API for new papers from the last 1 day (DAYS_AGO = 1).
+
+Deduplicate (DB Manager):
+
+Checks each entry_id against the SQLite DB (processed_papers.db).
+
+Already processed papers are skipped.
+
+Index (Vector Indexer):
+
+For new papers, the abstract is embedded using Ollama (embeddinggemma:300m).
+
+The vector and its metadata (title, authors, published_date, etc.) are stored in LanceDB.
+
+Processed paper IDs are saved to the SQLite DB.
+
+Generate (RAG Reporter - Map-Reduce):
+
+This is the core RAG step, executed once per day.
+
+Retrieve: Fetches the Top-K (e.g., 100) most relevant papers from that day using the BASE_RAG_QUERY.
+
+Map: The LLM summarizes these 100 papers in small, parallel batches (e.g., 5 batches of 20 papers) using the MAP_PROMPT_TEMPLATE.
+
+Reduce: The LLM takes these 5 intermediate summaries and synthesizes them into a single, cohesive LinkedIn post, following the REDUCE_PROMPT_TEMPLATE.
+
+Parse: The main script extracts the final post content by looking for <<<POST_START>>> and <<<POST_END>>> markers in the LLM's raw output.
+
+Translate (Local Translator):
+
+The single, generated English post is translated into Turkish using the Helsinki-NLP model, carefully preserving markdown formatting.
+
+Save:
+
+The final English (EN_post_...md) and Turkish (TR_post_...md) reports are saved to the daily_linkedin_post/ directory.
+
+🔧 Setup & Installation
+
+Clone the Repository:
+
+git clone [https://github.com/ekocak02/rag-arxiv.git](https://github.com/ekocak02/rag-arxiv.git)
+cd rag-arxiv
+
+
+Install Ollama:
+
+Download and install Ollama for your operating system.
+
+Pull Ollama Models:
+
+You must pull the embedding and LLM models specified in the scripts.
+
+ollama pull embeddinggemma:300m
+ollama pull gemma3:4b
+
+
+(Note: If you use different models, update the EMBED_MODEL_NAME and LLM_MODEL_NAME constants in vector_indexer.py and rag_reporter.py.)
+
+Create a Virtual Environment & Install Dependencies:
+
+python3.11 -m venv .venv
+source .venv/bin/activate  # (On Windows: .venv\Scripts\activate)
+pip install -r requirements.txt
+
+
+Download NLTK Data:
+
+The local_translator.py script requires the punkt tokenizer. It will attempt to download it automatically on the first run.
+
+Usage
 
 To run the entire pipeline (fetch, index, report, and translate), simply execute the main script:
 
-```bash
-python main_local_translate.py
-```
+python main_linkedin_report.py
 
-The script will log its progress through all 6 steps. Final reports will be saved in the `haftalik_raporlar/` directory.
 
-## 🗺️ Roadmap / Future Work
+The script will log its progress through all 5 steps. Final posts will be saved in the daily_linkedin_post/ directory.
 
-* **Docker Integration:** Containerize the entire application with `docker-compose`. This will package the Python environment and the Ollama service into a single, reproducible unit.
-* **Web Interface:** Add a simple FastAPI backend and a Streamlit frontend to view the generated reports from a browser.
-* **Full-Text Processing:** Extend the `data_ingestor` to download and parse PDFs, allowing the RAG pipeline to index the full text of papers, not just the abstracts.
+🗺️ Roadmap / Future Work
+
+Docker Integration: Containerize the entire application with docker-compose.
+
+Web Interface: Add a simple FastAPI backend and a Streamlit frontend to view the generated posts.
+
+Full-Text Processing: Extend the data_ingestor to download and parse PDFs, allowing the RAG pipeline to index the full text of papers, not just the abstracts.
