@@ -3,7 +3,7 @@ __pycache__/
 *.pyc
 
 # Reports (.md files)
-haftalik_raporlar/
+daily_linkedin_post/
 
 
 # Venv files
